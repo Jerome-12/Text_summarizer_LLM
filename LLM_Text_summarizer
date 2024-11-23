@@ -1,0 +1,42 @@
+import torch
+from transformers import T5Tokenizer, T5ForConditionalGeneration
+
+class TextSummarizer:
+    def __init__(self, model_name='t5-small'):
+        # Load pre-trained model and tokenizer
+        self.tokenizer = T5Tokenizer.from_pretrained(model_name)
+        self.model = T5ForConditionalGeneration.from_pretrained(model_name)
+
+    def summarize_text(self, text, max_length=150):
+        # Pre-process the text for the model
+        input_text = "summarize: " + text
+        input_ids = self.tokenizer.encode(input_text, return_tensors='pt', max_length=512, truncation=True)
+
+        # Generate summary
+        with torch.no_grad():
+            output_ids = self.model.generate(input_ids, max_length=max_length, min_length=25, length_penalty=2.0, num_beams=4, early_stopping=True)
+
+        # Decode the generated summary
+        summary = self.tokenizer.decode(output_ids[0], skip_special_tokens=True)
+        return summary
+
+def main():
+    print("Welcome to the Text Summarizer! Type 'exit' to quit.")
+    summarizer = TextSummarizer()
+
+    while True:
+        text_input = input("\nEnter the text to summarize (max 512 characters, or type 'exit' to quit): ")
+        if text_input.lower() == 'exit':
+            print("Exiting the Text Summarizer. Goodbye!")
+            break
+
+        if len(text_input) > 512:
+            print("Please limit your input to 512 characters.")
+            continue
+        
+        summary = summarizer.summarize_text(text_input)
+        print("Summary:")
+        print(summary)
+
+if __name__ == '__main__':
+    main()
